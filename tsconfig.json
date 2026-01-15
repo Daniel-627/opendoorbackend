@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    // Target latest JS features
+    "target": "ES2022",
+
+    // Module system for Node.js (ES modules)
+    "module": "NodeNext",
+
+    // Where TS looks for source files
+    "rootDir": "./src",
+
+    // Where compiled JS files go
+    "outDir": "./dist",
+
+    // Enables strict type checking
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+
+    // Allows import/export syntax with Node.js
+    "esModuleInterop": true,
+    "moduleResolution": "NodeNext",
+    "forceConsistentCasingInFileNames": true,
+
+    // Skip type checks in declaration files for speed
+    "skipLibCheck": true,
+
+    // Generate sourcemaps for debugging
+    "sourceMap": true,
+
+    // Generate declaration files
+    "declaration": true,
+    "declarationMap": true,
+
+    // Isolated modules (required for TS node dev)
+    "isolatedModules": true,
+
+    // Optional: Useful for code analysis
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  },
+
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}
