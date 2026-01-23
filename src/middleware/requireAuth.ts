@@ -1,21 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { db } from "../db/db"; // Your Drizzle client
-import { users, auth_sessions } from "../db/schema"; // Optional: if using typed Drizzle tables
+import { db } from "../db/db"; // Drizzle client
+import { users, auth_sessions } from "../db/schema";
+import { eq } from "drizzle-orm"; // 🔑 eq helper
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.cookies?.session_token; // Make sure cookie-parser is used in app.ts
+    const token = req.cookies?.session_token; // cookie-parser must be used
     if (!token) {
       return res.status(401).json({ message: "Unauthorized: No session token" });
     }
 
     // Find session
-    const session = await db
+    const sessions = await db
       .select()
       .from(auth_sessions)
-      .where(auth_sessions.session_token.eq(token))
-      .first();
+      .where(eq(auth_sessions.session_token, token));
 
+    const session = sessions[0]; // 🔑 pick first manually
     if (!session) {
       return res.status(401).json({ message: "Unauthorized: Invalid session" });
     }
@@ -26,12 +27,12 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     }
 
     // Fetch user
-    const user = await db
+    const userRows = await db
       .select()
       .from(users)
-      .where(users.id.eq(session.user_id))
-      .first();
+      .where(eq(users.id, session.user_id));
 
+    const user = userRows[0];
     if (!user) {
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
