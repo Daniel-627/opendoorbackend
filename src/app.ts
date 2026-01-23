@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { authRoutes } from "./routes/auth.routes";
 
 export function createApp() {
   const app = express();
@@ -9,10 +10,15 @@ export function createApp() {
   app.use(cors());
   app.use(express.json());
 
+  // Health check
   app.get("/health", (_req, res) => {
     res.json({ status: "ok", message: "OpenDoor backend running 🚀" });
   });
 
+  // 🔑 Mount auth routes under /auth
+  app.use("/auth", authRoutes);
+
+  // Global error handler
   app.use((err: any, _req: any, res: any, _next: any) => {
     console.error(err);
     res.status(500).json({ message: "Internal server error" });
@@ -20,3 +26,4 @@ export function createApp() {
 
   return app;
 }
+
