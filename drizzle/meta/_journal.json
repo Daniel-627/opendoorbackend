@@ -15,6 +15,13 @@
       "when": 1769031334026,
       "tag": "0001_robust_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769198739999,
+      "tag": "0002_salty_blue_blade",
+      "breakpoints": true
     }
   ]
 }
