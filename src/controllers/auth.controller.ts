@@ -21,7 +21,7 @@ export class AuthController {
   }
 
   static async me(req: Request, res: Response) {
-    // req.user is set by requireAuth middleware
+    
     res.json({ user: req.user });
   }
 

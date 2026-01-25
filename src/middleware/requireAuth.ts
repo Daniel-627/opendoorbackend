@@ -5,28 +5,28 @@ import { eq } from "drizzle-orm"; // 🔑 eq helper
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   try {
-    const token = req.cookies?.session_token; // cookie-parser must be used
+    const token = req.cookies?.session_token; 
     if (!token) {
       return res.status(401).json({ message: "Unauthorized: No session token" });
     }
 
-    // Find session
+    
     const sessions = await db
       .select()
       .from(auth_sessions)
       .where(eq(auth_sessions.session_token, token));
 
-    const session = sessions[0]; // 🔑 pick first manually
+    const session = sessions[0]; // 
     if (!session) {
       return res.status(401).json({ message: "Unauthorized: Invalid session" });
     }
 
-    // Check expiration
+    
     if (session.expires_at && new Date(session.expires_at) < new Date()) {
       return res.status(401).json({ message: "Unauthorized: Session expired" });
     }
 
-    // Fetch user
+    
     const userRows = await db
       .select()
       .from(users)
@@ -37,7 +37,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
 
-    // Attach user to request for downstream controllers
+    
     req.user = user;
 
     return next();
