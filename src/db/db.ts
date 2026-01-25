@@ -1,14 +1,37 @@
+// src/db/index.ts
 import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
-
-// Import all tables from schema/index.ts
 import * as schema from "./schema";
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // required for Neon
+  ssl:
+    process.env.NODE_ENV === "production"
+      ? { rejectUnauthorized: false } // Neon / Supabase / Railway
+      : undefined,
 });
 
-// Pass schema to Drizzle so it knows about all tables
-export const db = drizzle(pool, { schema });
+
+export const db = drizzle(pool, {
+  schema,
+  logger: process.env.NODE_ENV === "development",
+});
+
+
+export async function connectDB() {
+  try {
+    // Force an initial connection
+    await pool.query("SELECT 1");
+    console.log("DB connected via Drizzle");
+  } catch (error) {
+    console.error("Database connection error:", error);
+    process.exit(1);
+  }
+}
+
+export async function disconnectDB() {
+  console.log("Closing database pool...");
+  await pool.end();
+}
