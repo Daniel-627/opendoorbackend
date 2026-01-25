@@ -40,7 +40,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     // Attach user to request for downstream controllers
     req.user = user;
 
-    next();
+    return next();
   } catch (err) {
     console.error("requireAuth error:", err);
     return res.status(500).json({ message: "Internal server error" });
