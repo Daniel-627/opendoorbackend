@@ -6,9 +6,7 @@ import { v4 as uuid } from "uuid";
 import { eq, and } from "drizzle-orm";
 
 export class AuthService {
-  // =========================
-  // Signup
-  // =========================
+  
   static async signup(data: SignupDTO) {
     const { email, phone, password, fullName, provider } = data;
 
@@ -65,9 +63,7 @@ export class AuthService {
     };
   }
 
-  // =========================
-  // Login
-  // =========================
+  
   static async login(data: LoginDTO) {
     const { identifier, password, provider } = data;
 
@@ -112,9 +108,7 @@ export class AuthService {
     return { userId, roles, sessionToken };
   }
 
-  // =========================
-  // Logout
-  // =========================
+  
   static async logout(userId: string, sessionToken: string) {
     await db
       .delete(auth_sessions)
