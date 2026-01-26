@@ -8,8 +8,8 @@ import { z } from "zod";
 export const signupSchema = z.object({
   email: z
     .string()
-    .email("Invalid email format")
-    .optional(),
+    .trim()
+    .email("Invalid email format"),
 
   phone: z
     .string()
@@ -18,8 +18,7 @@ export const signupSchema = z.object({
 
   password: z
     .string()
-    .min(6, "Password must be at least 6 characters")
-    .optional(),
+    .min(6, "Password must be at least 6 characters"),
 
   fullName: z
     .string()
@@ -28,17 +27,7 @@ export const signupSchema = z.object({
   provider: z
     .enum(["local", "google"])
     .default("local"),
-})
-.refine(
-  (data) => {
-    if (data.provider === "google") return true;
-    return (data.email || data.phone) && data.password;
-  },
-  {
-    message: "Email/phone and password are required for local signup",
-    path: ["email"],
-  }
-);
+});
 
 /**
  * =========================
@@ -46,26 +35,16 @@ export const signupSchema = z.object({
  * =========================
  */
 export const loginSchema = z.object({
-  identifier: z
+  email: z
     .string()
-    .min(1, "Email or phone is required"),
+    .trim()
+    .email("Invalid email format"),
 
   password: z
     .string()
-    .min(1, "Password is required")
-    .optional(),
+    .min(1, "Password is required"),
 
   provider: z
     .enum(["local", "google"])
     .default("local"),
-})
-.refine(
-  (data) => {
-    if (data.provider === "google") return true;
-    return !!data.password;
-  },
-  {
-    message: "Password is required for local login",
-    path: ["password"],
-  }
-);
+});
