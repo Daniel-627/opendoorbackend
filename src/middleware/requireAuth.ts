@@ -1,45 +1,54 @@
 import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
 import { db } from "../db/db";
-import { users, auth_sessions, user_roles } from "../db/schema";
+import { users, user_roles } from "../db/schema";
 import { eq } from "drizzle-orm";
 
-export async function requireAuth(req: Request, res: Response, next: NextFunction) {
+interface JwtPayload {
+  userId: string;
+}
+
+export async function requireAuth(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   try {
-    const token = req.cookies?.session_token;
+    // 🔑 1. Read JWT from cookie (same place as before, different name)
+    const token = req.cookies?.access_token;
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized: No session token" });
+      return res.status(401).json({ message: "Unauthorized: No access token" });
     }
 
-    const sessions = await db
-      .select()
-      .from(auth_sessions)
-      .where(eq(auth_sessions.session_token, token));
-
-    const session = sessions[0];
-    if (!session) {
-      return res.status(401).json({ message: "Unauthorized: Invalid session" });
+    // 🔐 2. Verify JWT
+    let payload: JwtPayload;
+    try {
+      payload = jwt.verify(
+        token,
+        process.env.JWT_SECRET as string
+      ) as JwtPayload;
+    } catch {
+      return res.status(401).json({ message: "Unauthorized: Invalid token" });
     }
 
-    if (session.expires_at && new Date(session.expires_at) < new Date()) {
-      return res.status(401).json({ message: "Unauthorized: Session expired" });
-    }
-
+    // 👤 3. Load user (same as before)
     const userRows = await db
       .select()
       .from(users)
-      .where(eq(users.id, session.user_id));
+      .where(eq(users.id, payload.userId));
 
     const user = userRows[0];
     if (!user) {
       return res.status(401).json({ message: "Unauthorized: User not found" });
     }
 
-    // ✅ ADD ROLES (only addition)
+    // 🧾 4. Load roles (UNCHANGED)
     const roleRows = await db
       .select()
       .from(user_roles)
       .where(eq(user_roles.user_id, user.id));
 
+    // ✅ 5. Attach user (same shape as before)
     req.user = {
       ...user,
       roles: roleRows.map(r => r.role),

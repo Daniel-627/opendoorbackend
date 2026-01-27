@@ -11,8 +11,8 @@ export class AuthController {
     try {
       const user = await AuthService.signup(req.body);
 
-      // 🔐 Set HttpOnly session cookie
-      res.cookie("session_token", user.sessionToken, {
+      // 🔐 Set HttpOnly JWT cookie
+      res.cookie("access_token", user.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -39,8 +39,8 @@ export class AuthController {
     try {
       const session = await AuthService.login(req.body);
 
-      // 🔐 Set HttpOnly session cookie
-      res.cookie("session_token", session.sessionToken, {
+      // 🔐 Set HttpOnly JWT cookie
+      res.cookie("access_token", session.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -62,6 +62,7 @@ export class AuthController {
    * =========================
    */
   static async me(req: Request, res: Response) {
+    // requireAuth will populate req.user
     res.json({ user: req.user });
   }
 
@@ -70,16 +71,10 @@ export class AuthController {
    * Logout
    * =========================
    */
-  static async logout(req: Request, res: Response, next: NextFunction) {
+  static async logout(_req: Request, res: Response, next: NextFunction) {
     try {
-      const sessionToken = req.cookies.session_token;
-
-      if (sessionToken) {
-        await AuthService.logout(req.user.id, sessionToken);
-      }
-
-      // 🧹 Clear cookie
-      res.clearCookie("session_token", {
+      // 🧹 JWT logout = clear cookie only
+      res.clearCookie("access_token", {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
