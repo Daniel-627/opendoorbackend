@@ -1,15 +1,15 @@
 export interface SignupDTO {
-  email: string;          // ✅ required
-  password: string;       // ✅ required
-  fullName: string;       // ✅ required
-  phone?: string;         // optional
-  provider?: "local" | "google";
-  idToken?: string;       // for future Google auth
+  email?: string;
+  phone?: string;
+  password?: string;
+  fullName?: string;
+  provider?: "google";
+  idToken?: string;
 }
 
 export interface LoginDTO {
-  email: string;          // ✅ required
-  password: string;       // ✅ required
-  provider?: "local" | "google";
+  identifier?: string; // email or phone
+  password?: string;
+  provider?: "google";
   idToken?: string;
 }
