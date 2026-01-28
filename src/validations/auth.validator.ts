@@ -52,8 +52,7 @@ export const loginSchema = z.object({
 
   password: z
     .string()
-    .min(1, "Password is required")
-    .optional(),
+    .min(1, "Password is required"),
 
   provider: z
     .enum(["local", "google"])
