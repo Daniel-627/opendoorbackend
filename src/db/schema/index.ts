@@ -12,7 +12,13 @@ export { property_managers } from "./property_managers";
 export { units } from "./units";
 
 // Lease Domain
-// Leasing Layer
 export { lease_applications } from "./lease_applications";
 export { leases } from "./leases";
 export { lease_tenants } from "./lease_tenants";
+
+// Financial Domain
+export { accounts } from "./accounts";
+export { payments } from "./payments";
+export { ledgerEntries } from "./ledger_entries";
+export { adjustmentRequests } from "./adjustment_requests";
+export { invoices } from "./invoices";
