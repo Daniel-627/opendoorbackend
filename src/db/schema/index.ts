@@ -10,3 +10,9 @@ export { properties } from "./properties";
 export { property_owners } from "./property_owners";
 export { property_managers } from "./property_managers";
 export { units } from "./units";
+
+// Lease Domain
+// Leasing Layer
+export { lease_applications } from "./lease_applications";
+export { leases } from "./leases";
+export { lease_tenants } from "./lease_tenants";
