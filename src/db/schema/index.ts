@@ -1,3 +1,5 @@
+export * from "./enums";
+
 // Auth & Users
 export { users } from "./users";
 export { user_roles } from "./user_roles";
@@ -10,6 +12,7 @@ export { properties } from "./properties";
 export { property_owners } from "./property_owners";
 export { property_managers } from "./property_managers";
 export { units } from "./units";
+export { unit_details } from "./unit_details";   
 
 // Lease Domain
 export { lease_applications } from "./lease_applications";

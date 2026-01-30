@@ -1,16 +1,8 @@
-import { pgTable, uuid, pgEnum, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { properties } from "./properties";
 import { users } from "./users";
+import { ownerRoleEnum, ownerStatusEnum } from "./enums";
 
-export const ownerRoleEnum = pgEnum("owner_role", [
-  "primary_owner",
-  "co_owner",
-]);
-
-export const ownerStatusEnum = pgEnum("owner_status", [
-  "pending",
-  "approved",
-]);
 
 export const property_owners = pgTable("property_owners", {
   id: uuid("id").defaultRandom().primaryKey(),

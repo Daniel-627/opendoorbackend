@@ -31,3 +31,51 @@ export const invoiceStatusEnum = pgEnum("invoice_status", [
   "paid",
   "overdue",
 ]);
+
+export const leaseApplicationStatusEnum = pgEnum(
+  "lease_application_status",
+  ["pending", "approved", "rejected"]
+);
+
+export const leaseTenantRoleEnum = pgEnum("lease_tenant_role", [
+  "primary",
+  "secondary",
+]);
+
+export const rentCycleEnum = pgEnum("rent_cycle", [
+  "monthly",
+  "quarterly",
+  "yearly",
+]);
+
+export const leaseStatusEnum = pgEnum("lease_status", [
+  "pending",
+  "active",
+  "ended",
+  "cancelled",
+]);
+
+export const tenancyTypeEnum = pgEnum("tenancy_type", [
+  "single",
+  "shared",
+]);
+
+export const managerStatusEnum = pgEnum("manager_status", [
+  "pending",
+  "approved",
+]);
+
+export const ownerRoleEnum = pgEnum("owner_role", [
+  "primary_owner",
+  "co_owner",
+]);
+
+export const ownerStatusEnum = pgEnum("owner_status", [
+  "pending",
+  "approved",
+]);
+
+export const unitStatusEnum = pgEnum("unit_status", [
+  "vacant",
+  "occupied",
+]);

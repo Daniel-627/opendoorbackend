@@ -1,11 +1,8 @@
-import { pgTable, uuid, pgEnum, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { units } from "./units";
 import { users } from "./users";
+import { leaseApplicationStatusEnum } from "./enums";
 
-export const leaseApplicationStatusEnum = pgEnum(
-  "lease_application_status",
-  ["pending", "approved", "rejected"]
-);
 
 export const lease_applications = pgTable("lease_applications", {
   id: uuid("id").defaultRandom().primaryKey(),

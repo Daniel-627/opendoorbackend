@@ -1,11 +1,8 @@
-import { pgTable, uuid, pgEnum, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { leases } from "./leases";
 import { users } from "./users";
+import { leaseTenantRoleEnum } from "./enums";
 
-export const leaseTenantRoleEnum = pgEnum("lease_tenant_role", [
-  "primary",
-  "secondary",
-]);
 
 export const lease_tenants = pgTable("lease_tenants", {
   id: uuid("id").defaultRandom().primaryKey(),

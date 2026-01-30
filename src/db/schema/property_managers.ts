@@ -1,11 +1,9 @@
-import { pgTable, uuid, pgEnum, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, timestamp } from "drizzle-orm/pg-core";
 import { properties } from "./properties";
 import { users } from "./users";
+import { managerStatusEnum } from "./enums";
 
-export const managerStatusEnum = pgEnum("manager_status", [
-  "pending",
-  "approved",
-]);
+
 
 export const property_managers = pgTable("property_managers", {
   id: uuid("id").defaultRandom().primaryKey(),

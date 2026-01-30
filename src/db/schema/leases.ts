@@ -2,29 +2,12 @@ import {
   pgTable,
   uuid,
   date,
-  pgEnum,
   numeric,
   timestamp,
 } from "drizzle-orm/pg-core";
 import { units } from "./units";
+import { leaseStatusEnum, rentCycleEnum, tenancyTypeEnum } from "./enums";
 
-export const rentCycleEnum = pgEnum("rent_cycle", [
-  "monthly",
-  "quarterly",
-  "yearly",
-]);
-
-export const leaseStatusEnum = pgEnum("lease_status", [
-  "pending",
-  "active",
-  "ended",
-  "cancelled",
-]);
-
-export const tenancyTypeEnum = pgEnum("tenancy_type", [
-  "single",
-  "shared",
-]);
 
 export const leases = pgTable("leases", {
   id: uuid("id").defaultRandom().primaryKey(),

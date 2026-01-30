@@ -1,10 +1,7 @@
-import { pgTable, uuid, text, numeric, pgEnum, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, numeric, timestamp } from "drizzle-orm/pg-core";
 import { properties } from "./properties";
+import { unitStatusEnum } from "./enums";
 
-export const unitStatusEnum = pgEnum("unit_status", [
-  "vacant",
-  "occupied",
-]);
 
 export const units = pgTable("units", {
   id: uuid("id").defaultRandom().primaryKey(),
