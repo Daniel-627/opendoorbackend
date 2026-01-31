@@ -1,62 +1,57 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { db } from "../db/db";
-import { users, user_roles } from "../db/schema";
-import { eq } from "drizzle-orm";
 
+/**
+ * JWT payload shape
+ * This MUST match what you sign during login / register
+ */
 interface JwtPayload {
   userId: string;
+  roles: string[]; // ADMIN | OWNER | MANAGER | TENANT
 }
 
-export async function requireAuth(
+export function requireAuth(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
   try {
-    // 🔑 1. Read JWT from cookie (same place as before, different name)
+    // 🔑 1. Read JWT from cookie
     const token = req.cookies?.access_token;
+
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized: No access token" });
+      return res.status(401).json({
+        message: "Unauthorized: No access token",
+      });
     }
 
-    // 🔐 2. Verify JWT
+    // 🔐 2. Verify & decode JWT
     let payload: JwtPayload;
+
     try {
       payload = jwt.verify(
         token,
         process.env.JWT_SECRET as string
       ) as JwtPayload;
     } catch {
-      return res.status(401).json({ message: "Unauthorized: Invalid token" });
+      return res.status(401).json({
+        message: "Unauthorized: Invalid or expired token",
+      });
     }
 
-    // 👤 3. Load user (same as before)
-    const userRows = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, payload.userId));
-
-    const user = userRows[0];
-    if (!user) {
-      return res.status(401).json({ message: "Unauthorized: User not found" });
-    }
-
-    // 🧾 4. Load roles (UNCHANGED)
-    const roleRows = await db
-      .select()
-      .from(user_roles)
-      .where(eq(user_roles.user_id, user.id));
-
-    // ✅ 5. Attach user (same shape as before)
+    // ✅ 3. Attach user info from token (NO DB CALLS)
     req.user = {
-      ...user,
-      roles: roleRows.map(r => r.role),
+      id: payload.userId,
+      roles: payload.roles,
     };
 
+    // 🚀 4. Continue
     return next();
   } catch (err) {
     console.error("requireAuth error:", err);
-    return res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({
+      message: "Internal server error",
+    });
   }
 }
+
