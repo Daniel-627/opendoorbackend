@@ -1,5 +1,5 @@
 import { db } from "../../db/db";
-import { lease_applications, units, leases } from "../../db/schema";
+import { lease_applications, units, leases, properties } from "../../db/schema";
 import { eq, and } from "drizzle-orm";
 
 export class ApplicationsService {
@@ -64,4 +64,57 @@ export class ApplicationsService {
 
     return application;
   }
+
+
+  static async listForProperty(propertyId: string) {
+    return db
+      .select({
+        applicationId: lease_applications.id,
+        status: lease_applications.status,
+        created_at: lease_applications.created_at,
+        unit_id: units.id,
+        unit_label: units.label,
+        applicant_id: lease_applications.applicant_id,
+      })
+      .from(lease_applications)
+      .innerJoin(units, eq(units.id, lease_applications.unit_id))
+      .where(eq(units.property_id, propertyId));
+  }
+
+  static async approve(applicationId: string) {
+    const rows = await db
+      .update(lease_applications)
+      .set({
+        status: "approved",
+        reviewed_at: new Date(),
+      })
+      .where(eq(lease_applications.id, applicationId))
+      .returning();
+
+    const application = rows[0];
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    return application;
+  }
+
+  static async reject(applicationId: string) {
+    const rows = await db
+      .update(lease_applications)
+      .set({
+        status: "rejected",
+        reviewed_at: new Date(),
+      })
+      .where(eq(lease_applications.id, applicationId))
+      .returning();
+
+    const application = rows[0];
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    return application;
+  }
+
 }
