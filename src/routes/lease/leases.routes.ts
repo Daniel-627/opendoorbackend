@@ -1,17 +1,29 @@
 import { Router } from "express";
-import { LeasesController } from "../../controllers/lease/leases.controller";
 import { requireAuth } from "../../middleware/requireAuth";
-import { requireRole } from "../../middleware/requireRole";
-import { requireApplicationAccess } from "../../middleware/requireApplicationAccess";
+import { requireLeaseAccess } from "../../middleware/requireLeaseAccess";
+import { LeasesController } from "../../controllers/lease/leases.controller";
 
 const router = Router();
 
-router.post(
-  "/applications/:applicationId/lease",
+router.get(
+  "/leases/:leaseId",
   requireAuth,
-  requireRole(["owner", "manager", "admin"]),
-  requireApplicationAccess(),
-  LeasesController.createFromApplication
+  requireLeaseAccess(),
+  LeasesController.getOne
+);
+
+router.patch(
+  "/leases/:leaseId",
+  requireAuth,
+  requireLeaseAccess(),
+  LeasesController.update
+);
+
+router.post(
+  "/leases/:leaseId/terminate",
+  requireAuth,
+  requireLeaseAccess(),
+  LeasesController.terminate
 );
 
 export default router;

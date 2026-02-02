@@ -1,73 +1,48 @@
 import { db } from "../../db/db";
-import {
-  lease_applications,
-  leases,
-  lease_tenants,
-  units,
-} from "../../db/schema";
+import { leases, units } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export class LeasesService {
-  static async createFromApplication(
-    applicationId: string,
-    data: {
-      start_date: string;
+  static async update(
+    leaseId: string,
+    data: Partial<{
+      end_date: string;
       rent_cycle: "monthly" | "quarterly" | "yearly";
-      deposit_amount: string;
-      tenancy_type?: "residential" | "commercial";
-    }
+    }>
   ) {
-    // Map tenancy_type to DB values
-    const tenancyTypeMap: Record<"residential" | "commercial", "single" | "shared"> = {
-      residential: "single",
-      commercial: "shared",
-    };
-    const dbTenancyType = data.tenancy_type ? tenancyTypeMap[data.tenancy_type] : undefined;
-    // 1️⃣ Load application
-    const application = await db
-      .select()
-      .from(lease_applications)
-      .where(eq(lease_applications.id, applicationId))
-      .then(r => r[0]);
-
-    if (!application) {
-      throw new Error("Application not found");
-    }
-
-    if (application.status !== "approved") {
-      throw new Error("Application is not approved");
-    }
-
-    // 2️⃣ Create lease (let DB defaults work)
-    const leaseRows = await db
-      .insert(leases)
-      .values({
-        unit_id: application.unit_id,
-        start_date: data.start_date,
-        rent_cycle: data.rent_cycle,
-        deposit_amount: data.deposit_amount,
-        tenancy_type: dbTenancyType,
-        // status omitted → defaults to "pending"
-      })
+    const rows = await db
+      .update(leases)
+      .set(data)
+      .where(eq(leases.id, leaseId))
       .returning();
 
-    const lease = leaseRows[0];
-    if (!lease) {
-      throw new Error("Failed to create lease");
-    }
+    const lease = rows[0];
+    if (!lease) throw new Error("Lease not found");
 
-    // 3️⃣ Link tenant to lease
-    await db.insert(lease_tenants).values({
-      lease_id: lease.id,
-      user_id: application.applicant_id,
-      role: "primary",
-    });
+    return lease;
+  }
 
-    // 4️⃣ Mark unit occupied
+  /**
+   * Lease termination (MVP)
+   */
+  static async terminate(leaseId: string) {
+    const rows = await db
+      .update(leases)
+      .set({
+        status: "ended",
+        end_date: new Date().toISOString().split("T")[0],
+      })
+      .where(eq(leases.id, leaseId))
+      .returning();
+
+    const lease = rows[0];
+    if (!lease) throw new Error("Lease not found");
+
+    // Free the unit
     await db
       .update(units)
-      .set({ status: "occupied" })
-      .where(eq(units.id, application.unit_id));
+      .set({ status: "vacant" })
+      .where(eq(units.id, lease.unit_id));
 
     return lease;
   }
