@@ -1,50 +1,31 @@
 import { db } from "../../db/db";
-import { invoices, leases } from "../../db/schema";
-import { eq, and } from "drizzle-orm";
+import {
+  invoices,
+  leases,
+  units,
+  ledgerEntries,
+} from "../../db/schema";
+import { eq } from "drizzle-orm";
 
 export class InvoicesService {
-  /**
-   * Create invoice for a lease & period
-   */
   static async createInvoice(
     leaseId: string,
     data: {
-      period: string;        // e.g. "2026-02"
-      totalAmount: string;   // rent amount
+      period: string;
+      totalAmount: string;
     }
   ) {
-    // 1️⃣ Ensure lease exists
     const lease = await db
       .select()
       .from(leases)
       .where(eq(leases.id, leaseId))
       .then(r => r[0]);
 
-    if (!lease) {
-      throw new Error("Lease not found");
-    }
-
+    if (!lease) throw new Error("Lease not found");
     if (lease.status !== "active") {
       throw new Error("Cannot invoice inactive lease");
     }
 
-    // 2️⃣ Prevent duplicate invoice for same period
-    const existing = await db
-      .select()
-      .from(invoices)
-      .where(
-        and(
-          eq(invoices.leaseId, leaseId),
-          eq(invoices.period, data.period)
-        )
-      )
-      .then(r => r[0]);
-
-    if (existing) {
-      throw new Error("Invoice already exists for this period");
-    }
-
-    // 3️⃣ Create invoice
     const rows = await db
       .insert(invoices)
       .values({
@@ -58,30 +39,67 @@ export class InvoicesService {
     return rows[0];
   }
 
-  /**
-   * List invoices for a lease
-   */
   static async listByLease(leaseId: string) {
     return db
       .select()
       .from(invoices)
-      .where(eq(invoices.leaseId, leaseId))
-      .orderBy(invoices.createdAt);
+      .where(eq(invoices.leaseId, leaseId));
   }
 
   /**
-   * Issue invoice (draft → issued)
+   * ISSUE INVOICE → CREATE LEDGER DEBIT
    */
   static async issue(invoiceId: string) {
-    const rows = await db
+    // 1️⃣ Load invoice
+    const invoice = await db
+      .select()
+      .from(invoices)
+      .where(eq(invoices.id, invoiceId))
+      .then(r => r[0]);
+
+    if (!invoice) throw new Error("Invoice not found");
+    if (invoice.status !== "draft") {
+      throw new Error("Only draft invoices can be issued");
+    }
+
+    // 2️⃣ Load lease
+    const lease = await db
+      .select()
+      .from(leases)
+      .where(eq(leases.id, invoice.leaseId))
+      .then(r => r[0]);
+
+    if (!lease) throw new Error("Lease not found");
+
+    // 3️⃣ Load unit (for ledger context)
+    const unit = await db
+      .select()
+      .from(units)
+      .where(eq(units.id, lease.unit_id))
+      .then(r => r[0]);
+
+    // 4️⃣ Mark invoice as issued
+    const updatedRows = await db
       .update(invoices)
       .set({ status: "issued" })
       .where(eq(invoices.id, invoiceId))
       .returning();
 
-    const invoice = rows[0];
-    if (!invoice) throw new Error("Invoice not found");
+    const issuedInvoice = updatedRows[0];
 
-    return invoice;
+    // 5️⃣ Create ledger DEBIT (rent charge)
+    await db.insert(ledgerEntries).values({
+      type: "charge",
+      category: "rent",
+      amount: invoice.totalAmount,
+      leaseId: lease.id,
+      unitId: lease.unit_id,
+      propertyId: unit?.property_id,
+      period: invoice.period,
+      reference: invoice.id, // link to invoice
+      currency: "KES",
+    });
+
+    return issuedInvoice;
   }
 }
