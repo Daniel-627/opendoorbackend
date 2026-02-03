@@ -17,6 +17,9 @@ export const ledgerTypeEnum = pgEnum("ledger_type", [
 export const paymentMethodEnum = pgEnum("payment_method", [
   "mpesa",
   "bank",
+  "cash",
+  "credit_card",
+  
 ]);
 
 export const paymentStatusEnum = pgEnum("payment_status", [
