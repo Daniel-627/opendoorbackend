@@ -34,6 +34,7 @@ router.post(
   "/invoices/:invoiceId/issue",
   requireAuth,
   requireRole(["owner", "manager", "admin"]),
+  requireLeaseAccess(),
   InvoicesController.issue
 );
 

@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { InvoicesService } from "../../services/finance/invoices.service";
 
 export class InvoicesController {
@@ -28,14 +28,19 @@ export class InvoicesController {
     res.json(invoices);
   }
 
-  static async issue(req: Request, res: Response) {
-    const { invoiceId } = req.params;
-    if (typeof invoiceId !== "string") {
-      return res.status(400).json({ error: "invoiceId is required" });
+   static async issue(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { invoiceId } = req.params;
+
+      if (typeof invoiceId !== "string") {
+        return res.status(400).json({ error: "invoiceId is required" });
+      }
+
+      const result = await InvoicesService.issueInvoice(invoiceId);
+
+      res.json(result);
+    } catch (err) {
+      next(err);
     }
-
-    const invoice = await InvoicesService.issue(invoiceId);
-
-    res.json(invoice);
   }
 }
