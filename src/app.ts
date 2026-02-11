@@ -22,6 +22,8 @@ import leasesRoutes from "./routes/lease/leases.routes";
 import balanceRoutes from "./routes/finance/balance.routes";
 import invoicesRoutes from "./routes/finance/invoices.routes";
 import ledgerRoutes from "./routes/finance/ledger.routes";
+import userRolesRoutes from "./routes/users/userRoles.routes";
+
 
 
 export function createApp() {
@@ -50,6 +52,7 @@ export function createApp() {
    * Auth
    */
   app.use("/auth", authRoutes);
+  app.use("/user-roles", userRolesRoutes);
 
   /**
    * Public (no auth)
