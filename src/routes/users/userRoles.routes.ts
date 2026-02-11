@@ -1,24 +1,26 @@
 import { Router } from "express";
 import { UserRolesController } from "../../controllers/users/userRoles.controller";
-// import { requireAdmin } from "../../middlewares/auth.middleware";
+import { requireAuth } from "../../middleware/requireAuth";
+import { requireRole } from "../../middleware/requireRole";
 
 const router = Router();
 
-/**
- * Admin role management
- */
 
-// router.use(requireAdmin);  // Enable when middleware is ready
+router.use(requireAuth);
+router.use(requireRole(["ADMIN"]));
+
 
 router.post(
   "/:userId/roles",
   UserRolesController.assignRole
 );
 
+
 router.patch(
   "/:userId/roles/revoke",
   UserRolesController.revokeRole
 );
+
 
 router.get(
   "/:userId/roles",
