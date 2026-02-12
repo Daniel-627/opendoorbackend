@@ -3,7 +3,7 @@ import { users, auth_credentials, user_roles } from "../db/schema";
 import { hashPassword, verifyPassword } from "../utils/password";
 import { SignupDTO, LoginDTO } from "../dtos/auth.dtos";
 import { signAccessToken } from "../utils/jwt";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export class AuthService {
 
@@ -17,12 +17,65 @@ export class AuthService {
       throw new Error("Google signup not implemented yet");
     }
 
-    if (!email && !phone) throw new Error("Email or phone is required");
-    if (!password) throw new Error("Password is required");
+    if (!email && !phone) {
+      throw new Error("Email or phone is required");
+    }
 
-    const identifierValue: string = email ? email : phone!;
+    if (!password) {
+      throw new Error("Password is required");
+    }
 
-    // 1️⃣ Create user
+    // =========================
+    // 1️⃣ Prevent duplicate email
+    // =========================
+    if (email) {
+      const existingEmail = await db
+        .select()
+        .from(users)
+        .where(eq(users.email, email));
+
+      if (existingEmail.length > 0) {
+        throw new Error("Email already in use");
+      }
+    }
+
+    // =========================
+    // 2️⃣ Prevent duplicate phone
+    // =========================
+    if (phone) {
+      const existingPhone = await db
+        .select()
+        .from(users)
+        .where(eq(users.phone_number, phone));
+
+      if (existingPhone.length > 0) {
+        throw new Error("Phone number already in use");
+      }
+    }
+
+    const identifierValue = email ? email : phone!;
+    const identifierType = email ? "email" : "phone";
+
+    // =========================
+    // 3️⃣ Prevent duplicate credential identifier
+    // =========================
+    const existingCredential = await db
+      .select()
+      .from(auth_credentials)
+      .where(
+        and(
+          eq(auth_credentials.identifier, identifierValue),
+          eq(auth_credentials.identifier_type, identifierType)
+        )
+      );
+
+    if (existingCredential.length > 0) {
+      throw new Error("Identifier already in use");
+    }
+
+    // =========================
+    // 4️⃣ Create user
+    // =========================
     const userResult = await db
       .insert(users)
       .values({
@@ -33,18 +86,26 @@ export class AuthService {
       .returning({ id: users.id });
 
     const userId = userResult[0]?.id;
-    if (!userId) throw new Error("Failed to create user");
 
-    // 2️⃣ Create credentials
-    const hashed = await hashPassword(password);
+    if (!userId) {
+      throw new Error("Failed to create user");
+    }
+
+    // =========================
+    // 5️⃣ Create credentials
+    // =========================
+    const hashedPassword = await hashPassword(password);
+
     await db.insert(auth_credentials).values({
       user_id: userId,
       identifier: identifierValue,
-      identifier_type: email ? "email" : "phone",
-      password_hash: hashed,
+      identifier_type: identifierType,
+      password_hash: hashedPassword,
     });
 
-    // 3️⃣ Assign default role
+    // =========================
+    // 6️⃣ Assign default role (tenant)
+    // =========================
     const roles = ["tenant"];
 
     await db.insert(user_roles).values({
@@ -53,7 +114,9 @@ export class AuthService {
       status: "active",
     });
 
-    // 4️⃣ Issue JWT (WITH ROLES)
+    // =========================
+    // 7️⃣ Issue JWT
+    // =========================
     const accessToken = signAccessToken({
       userId,
       roles,
@@ -78,33 +141,60 @@ export class AuthService {
       throw new Error("Google login not implemented yet");
     }
 
-    if (!identifier) throw new Error("Identifier is required");
-    if (!password) throw new Error("Password is required");
+    if (!identifier) {
+      throw new Error("Identifier is required");
+    }
 
-    // 1️⃣ Find credentials
+    if (!password) {
+      throw new Error("Password is required");
+    }
+
+    // =========================
+    // 1️⃣ Find credential
+    // =========================
     const credentialRows = await db
       .select()
       .from(auth_credentials)
       .where(eq(auth_credentials.identifier, identifier));
 
     const credential = credentialRows[0];
-    if (!credential) throw new Error("Invalid credentials");
 
+    if (!credential) {
+      throw new Error("Invalid credentials");
+    }
+
+    // =========================
     // 2️⃣ Verify password
-    const valid = await verifyPassword(password, credential.password_hash);
-    if (!valid) throw new Error("Invalid credentials");
+    // =========================
+    const validPassword = await verifyPassword(
+      password,
+      credential.password_hash
+    );
+
+    if (!validPassword) {
+      throw new Error("Invalid credentials");
+    }
 
     const userId = credential.user_id;
 
-    // 3️⃣ Fetch roles
+    // =========================
+    // 3️⃣ Fetch ACTIVE roles only
+    // =========================
     const rolesRows = await db
       .select()
       .from(user_roles)
-      .where(eq(user_roles.user_id, userId));
+      .where(
+        and(
+          eq(user_roles.user_id, userId),
+          eq(user_roles.status, "active")
+        )
+      );
 
-    const roles = rolesRows.map(r => r.role);
+    const roles = rolesRows.map((r) => r.role);
 
-    // 4️⃣ Issue JWT (WITH ROLES)
+    // =========================
+    // 4️⃣ Issue JWT
+    // =========================
     const accessToken = signAccessToken({
       userId,
       roles,
@@ -118,10 +208,9 @@ export class AuthService {
   }
 
   // =========================
-  // Logout (stateless)
+  // Logout (stateless JWT)
   // =========================
   static async logout() {
-    // JWT logout = clear cookie on client
     return;
   }
 }
