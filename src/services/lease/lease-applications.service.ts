@@ -22,6 +22,11 @@ export class LeasesService {
       residential: "single",
       commercial: "shared",
     };
+
+    if (!data) {
+      throw new Error("Lease data is required");
+    }
+
     const dbTenancyType = data.tenancy_type ? tenancyTypeMap[data.tenancy_type] : undefined;
     // 1️⃣ Load application
     const application = await db
