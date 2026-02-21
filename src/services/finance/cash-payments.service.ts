@@ -1,41 +1,42 @@
 import { db } from "../../db/db";
-import { payments, ledgerEntries, leases } from "../../db/schema";
+import { payments, leases } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
-export class CashPaymentsService {
+export class LeaseActivationCashService {
   /**
-   * Tenant declares a cash payment
+   * Tenant declares a cash activation payment
    */
-  static async declareCashPayment(data: {
+  static async declareActivationPayment(data: {
     leaseId: string;
     amount: string;
     userId: string;
-    period?: string;
   }) {
     const paymentRows = await db
       .insert(payments)
       .values({
         method: "cash",
-        reference: `cash-${Date.now()}`,
+        reference: `activation-cash-${Date.now()}`,
         rawPayload: {
-          declaredBy: data.userId,
-          amount: data.amount,
           leaseId: data.leaseId,
+          declaredBy: data.userId,
+          type: "lease_activation",
+          amount: data.amount,
         },
         status: "pending",
       })
       .returning();
 
     const payment = paymentRows[0];
-    if (!payment) throw new Error("Failed to record cash payment");
+    if (!payment) throw new Error("Failed to record activation payment");
 
     return payment;
   }
 
   /**
-   * Owner / Manager confirms cash payment
+   * Owner confirms activation payment
+   * → This ACTIVATES the lease
    */
-  static async confirmCashPayment(paymentId: string) {
+  static async confirmActivationPayment(paymentId: string) {
     const paymentRows = await db
       .update(payments)
       .set({ status: "confirmed" })
@@ -45,27 +46,28 @@ export class CashPaymentsService {
     const payment = paymentRows[0];
     if (!payment) throw new Error("Payment not found");
 
-    const { leaseId, amount } = payment.rawPayload as {
-      leaseId: string;
-      amount: string;
-    };
+    if (payment.status !== "confirmed") {
+      throw new Error("Payment confirmation failed");
+    }
 
-    // Create ledger CREDIT
-    await db.insert(ledgerEntries).values({
-      leaseId,
-      type: "payment",
-      category: "rent_payment",
-      amount,
-      reference: payment.id,
-    });
+    // Activate lease - leaseId should be available from the payment object
+    const leaseId = (payment.rawPayload as any)?.leaseId;
+    if (leaseId) {
+      await db
+        .update(leases)
+        .set({
+          status: "active",
+        })
+        .where(eq(leases.id, leaseId));
+    }
 
     return payment;
   }
 
   /**
-   * Reject cash payment
+   * Owner rejects activation payment
    */
-  static async rejectCashPayment(paymentId: string) {
+  static async rejectActivationPayment(paymentId: string) {
     const rows = await db
       .update(payments)
       .set({ status: "failed" })
