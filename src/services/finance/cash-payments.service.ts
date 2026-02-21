@@ -1,10 +1,10 @@
 import { db } from "../../db/db";
-import { payments, leases } from "../../db/schema";
+import { payments, leases, units } from "../../db/schema";
 import { eq } from "drizzle-orm";
 
 export class LeaseActivationCashService {
   /**
-   * Tenant declares a cash activation payment
+   * Tenant declares activation cash payment
    */
   static async declareActivationPayment(data: {
     leaseId: string;
@@ -33,8 +33,9 @@ export class LeaseActivationCashService {
   }
 
   /**
-   * Owner confirms activation payment
-   * → This ACTIVATES the lease
+   * Confirm activation payment
+   * → processing_activation → active
+   * → unit becomes occupied
    */
   static async confirmActivationPayment(paymentId: string) {
     const paymentRows = await db
@@ -46,27 +47,37 @@ export class LeaseActivationCashService {
     const payment = paymentRows[0];
     if (!payment) throw new Error("Payment not found");
 
-    if (payment.status !== "confirmed") {
-      throw new Error("Payment confirmation failed");
+    const leaseId = (payment.rawPayload as any)?.leaseId;
+    if (!leaseId) throw new Error("Lease ID missing in payment");
+
+    // 1️⃣ Get lease
+    const lease = await db
+      .select()
+      .from(leases)
+      .where(eq(leases.id, leaseId))
+      .then((r) => r[0]);
+
+    if (!lease) throw new Error("Lease not found");
+
+    if (lease.status !== "processing_activation") {
+      throw new Error("Lease is not in activation stage");
     }
 
-    // Activate lease - leaseId should be available from the payment object
-    const leaseId = (payment.rawPayload as any)?.leaseId;
-    if (leaseId) {
-      await db
-        .update(leases)
-        .set({
-          status: "active",
-        })
-        .where(eq(leases.id, leaseId));
-    }
+    // 2️⃣ Activate lease
+    await db
+      .update(leases)
+      .set({ status: "active" })
+      .where(eq(leases.id, leaseId));
+
+    // 3️⃣ Occupy unit
+    await db
+      .update(units)
+      .set({ status: "occupied" })
+      .where(eq(units.id, lease.unit_id));
 
     return payment;
   }
 
-  /**
-   * Owner rejects activation payment
-   */
   static async rejectActivationPayment(paymentId: string) {
     const rows = await db
       .update(payments)

@@ -56,6 +56,7 @@ export const leaseStatusEnum = pgEnum("lease_status", [
   "active",
   "ended",
   "cancelled",
+  "processing_activation",
 ]);
 
 export const tenancyTypeEnum = pgEnum("tenancy_type", [

@@ -1,0 +1,1 @@
+ALTER TYPE "public"."lease_status" ADD VALUE 'processing_activation';
