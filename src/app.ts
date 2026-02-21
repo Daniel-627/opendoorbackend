@@ -23,6 +23,7 @@ import balanceRoutes from "./routes/finance/balance.routes";
 import invoicesRoutes from "./routes/finance/invoices.routes";
 import ledgerRoutes from "./routes/finance/ledger.routes";
 import userRolesRoutes from "./routes/users/userRoles.routes";
+import cashPaymentsRoutes from "./routes/finance/cash-payments.routes";
 
 
 
@@ -79,6 +80,7 @@ export function createApp() {
   app.use("/finance/balance", balanceRoutes);
   app.use("/finance/invoices", invoicesRoutes);
   app.use("/finance/ledger", ledgerRoutes);
+  app.use("/finance", cashPaymentsRoutes);
 
   /**
    * Global error handler
