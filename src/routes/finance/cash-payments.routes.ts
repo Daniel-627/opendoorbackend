@@ -10,7 +10,7 @@ const router = Router();
  * Tenant declares cash payment
  */
 router.post(
-  "/payments/cash:leaseId",
+  "/payments/cash/:leaseId",
   requireAuth,
   requireRole(["tenant"]),
   requireLeaseAccess(),
