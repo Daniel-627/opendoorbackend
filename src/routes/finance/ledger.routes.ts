@@ -1,3 +1,5 @@
+// routes/finance/ledger.routes.ts
+
 import { Router } from "express";
 import { LedgerController } from "../../controllers/finance/ledger.controller";
 import { requireAuth } from "../../middleware/requireAuth";
@@ -7,7 +9,7 @@ import { requireLeaseAccess } from "../../middleware/requireLeaseAccess";
 const router = Router();
 
 /**
- * Create rent charge
+ * Create rent charge (allowed)
  */
 router.post(
   "/leases/:leaseId/charge",
@@ -15,17 +17,6 @@ router.post(
   requireRole(["owner", "manager", "admin"]),
   requireLeaseAccess(),
   LedgerController.createCharge
-);
-
-/**
- * Record payment (cash/manual)
- */
-router.post(
-  "/leases/:leaseId/payment",
-  requireAuth,
-  requireRole(["owner", "manager", "admin"]),
-  requireLeaseAccess(),
-  LedgerController.createPayment
 );
 
 /**

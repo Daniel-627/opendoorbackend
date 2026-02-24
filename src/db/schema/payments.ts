@@ -13,6 +13,14 @@ import {
 
 import { leases } from "./leases";
 
+// db/schema/payments.ts
+
+type PaymentRawPayload = {
+  declaredBy: string;
+  amount: string;
+  period?: string;
+};
+
 export const payments = pgTable("payments", {
   id: uuid("id").defaultRandom().primaryKey(),
 
@@ -22,12 +30,13 @@ export const payments = pgTable("payments", {
 
   method: paymentMethodEnum("method").notNull(),
 
-  // 🔥 NEW — distinguishes payment purpose
   category: varchar("category", { length: 50 }).notNull(),
 
   reference: varchar("reference", { length: 255 }).notNull(),
 
-  rawPayload: jsonb("raw_payload").notNull(),
+  rawPayload: jsonb("raw_payload")
+    .$type<PaymentRawPayload>()   // 👈 THIS FIXES IT
+    .notNull(),
 
   status: paymentStatusEnum("status")
     .default("pending")

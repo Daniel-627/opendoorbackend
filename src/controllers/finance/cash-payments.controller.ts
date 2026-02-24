@@ -2,14 +2,18 @@ import { Request, Response, NextFunction } from "express";
 import { CashPaymentsService } from "../../services/finance/cash-payments.service";
 
 export class CashPaymentsController {
-  // Tenant
+
+  // Tenant declares payment
   static async declare(req: Request, res: Response, next: NextFunction) {
     try {
+      const { leaseId, amount, period, category } = req.body;
+
       const payment = await CashPaymentsService.declareCashPayment({
-        leaseId: req.body.leaseId,
-        amount: req.body.amount,
+        leaseId,
+        amount,
         userId: req.user!.id,
-        period: req.body.period,
+        period,
+        category,
       });
 
       res.status(201).json(payment);
@@ -18,15 +22,17 @@ export class CashPaymentsController {
     }
   }
 
-  // Owner / Manager
+  // Owner confirms payment
   static async confirm(req: Request, res: Response, next: NextFunction) {
     try {
-      const paymentId = req.params.paymentId;
-      if (typeof paymentId !== "string") {
-        return res.status(400).json({ error: "paymentId is required" });
+      const paymentIdParam = req.params.paymentId;
+
+      // Runtime + TypeScript safe validation
+      if (!paymentIdParam || Array.isArray(paymentIdParam)) {
+        return res.status(400).json({ error: "Invalid paymentId" });
       }
 
-      const payment = await CashPaymentsService.confirmCashPayment(paymentId);
+      const payment = await CashPaymentsService.confirmCashPayment(paymentIdParam);
 
       res.json(payment);
     } catch (err) {
@@ -34,14 +40,17 @@ export class CashPaymentsController {
     }
   }
 
+  // Owner rejects payment
   static async reject(req: Request, res: Response, next: NextFunction) {
     try {
-      const paymentId = req.params.paymentId;
-      if (typeof paymentId !== "string") {
-        return res.status(400).json({ error: "paymentId is required" });
+      const paymentIdParam = req.params.paymentId;
+
+      // Runtime + TypeScript safe validation
+      if (!paymentIdParam || Array.isArray(paymentIdParam)) {
+        return res.status(400).json({ error: "Invalid paymentId" });
       }
 
-      const payment = await CashPaymentsService.rejectCashPayment(paymentId);
+      const payment = await CashPaymentsService.rejectCashPayment(paymentIdParam);
 
       res.json(payment);
     } catch (err) {

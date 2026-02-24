@@ -1,10 +1,13 @@
+// services/finance/ledger.service.ts
+
 import { db } from "../../db/db";
 import { ledgerEntries } from "../../db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 export class LedgerService {
+
   /**
-   * Create a rent charge (tenant owes)
+   * Create rent charge (tenant owes)
    */
   static async createCharge(data: {
     leaseId: string;
@@ -34,40 +37,32 @@ export class LedgerService {
   }
 
   /**
-   * Create a payment entry (manual, cash, bank, mpesa later)
+   * INTERNAL: Create payment ledger entry
+   * Should only be called from PaymentsService inside transaction
    */
-  static async createPayment(data: {
+  static async createPaymentEntry(tx: any, data: {
     leaseId: string;
     propertyId: string;
     unitId: string;
     userId: string;
     amount: string;
-    period: string;
-    accountId?: string;
-    paymentId?: string;
+    period?: string;
+    category: string;
+    paymentId: string;
   }) {
-    const [entry] = await db
-      .insert(ledgerEntries)
-      .values({
-        leaseId: data.leaseId,
-        propertyId: data.propertyId,
-        unitId: data.unitId,
-        userId: data.userId,
-        type: "payment",
-        category: "rent",
-        amount: data.amount,
-        period: data.period,
-        accountId: data.accountId,
-        reference: data.paymentId,
-      })
-      .returning();
-
-    return entry;
+    await tx.insert(ledgerEntries).values({
+      leaseId: data.leaseId,
+      propertyId: data.propertyId,
+      unitId: data.unitId,
+      userId: data.userId,
+      type: "payment",
+      category: data.category,
+      amount: data.amount,
+      period: data.period,
+      reference: data.paymentId,
+    });
   }
 
-  /**
-   * List ledger entries for a lease
-   */
   static async listByLease(leaseId: string) {
     return db
       .select()
@@ -76,11 +71,6 @@ export class LedgerService {
       .orderBy(ledgerEntries.createdAt);
   }
 
-  /**
-   * Calculate balance for a lease
-   * charge  => +
-   * payment => -
-   */
   static async calculateBalance(leaseId: string) {
     const entries = await db
       .select()
@@ -92,22 +82,11 @@ export class LedgerService {
     for (const entry of entries) {
       const amount = Number(entry.amount);
 
-      if (entry.type === "charge") {
-        balance += amount;
-      }
-
-      if (entry.type === "payment") {
-        balance -= amount;
-      }
-
-      if (entry.type === "adjustment") {
-        balance += amount;
-      }
+      if (entry.type === "charge") balance += amount;
+      if (entry.type === "payment") balance -= amount;
+      if (entry.type === "adjustment") balance += amount;
     }
 
-    return {
-      leaseId,
-      balance,
-    };
+    return { leaseId, balance };
   }
 }
